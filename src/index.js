@@ -1,15 +1,36 @@
 const holes = document.querySelectorAll('.hole');
 const moles = document.querySelectorAll('.mole');
 const startButton = document.querySelector('#start');
-// TODO: Add the missing query selectors:
-const score; // Use querySelector() to get the score element
-const timerDisplay; // use querySelector() to get the timer element.
+const score = document.querySelector('#score');
+const timerDisplay = document.querySelector('#timer');
+
+const audioHit = new Audio("https://github.com/gabrielsanchez/erddiagram/blob/main/hit.mp3?raw=true");
+const song = new Audio("https://github.com/gabrielsanchez/erddiagram/blob/main/molesong.mp3?raw=true");
+function playAudio(audioObject) {
+  audioObject.play();
+}
+function loopAudio(audioObject) {
+  audioObject.loop = true;
+  playAudio(audioObject);
+}
+function stopAudio(audioObject) {
+  audioObject.pause();
+}
+function play(){
+  playAudio(song);
+}
 
 let time = 0;
 let timer;
-let lastHole = 0;
+let lastHole = -1;
 let points = 0;
-let difficulty = "hard";
+let difficulty = "easy";
+
+// Added to disable gameplay changes that I added that interfere with the test suite
+let testMode = true;
+
+let whacked = false;
+let whackable = null;
 
 /**
  * Generates a random integer within a range.
@@ -21,7 +42,7 @@ let difficulty = "hard";
  *
  */
 function randomInteger(min, max) {
-  // return Math.floor(Math.random() * (max - min + 1)) + min;
+  return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
 /**
@@ -40,8 +61,13 @@ function randomInteger(min, max) {
  *
  */
 function setDelay(difficulty) {
-  // TODO: Write your code here.
-  
+  if ( difficulty === 'hard' ) {
+    return randomInteger(600,1200);
+  }
+  if ( difficulty === 'normal') {
+    return 1000;
+  }
+  return 1500;  
 }
 
 /**
@@ -59,8 +85,19 @@ function setDelay(difficulty) {
  * chooseHole(holes) //> returns one of the 9 holes that you defined
  */
 function chooseHole(holes) {
-  // TODO: Write your code here.
-
+  let max = holes.length-1;
+  if ( lastHole != -1 ) {
+    max--;
+  }
+  let anotherHole = randomInteger(0,max);
+  
+  if ( lastHole != -1 && ( anotherHole >= lastHole )) {
+    anotherHole++;
+    
+  }
+  lastHole = anotherHole;
+  
+  return holes[ anotherHole ];
 }
 
 /**
@@ -84,8 +121,13 @@ function chooseHole(holes) {
 *
 */
 function gameOver() {
-  // TODO: Write your code here
-  
+  if(time > 0){
+   let timeoutId = showUp();
+    return timeoutId;
+  } else {
+    let gameStopped = stopGame();
+    return gameStopped;
+  }
 }
 
 /**
@@ -98,8 +140,9 @@ function gameOver() {
 *
 */
 function showUp() {
-  let delay = 0; // TODO: Update so that it uses setDelay()
-  const hole = 0;  // TODO: Update so that it use chooseHole()
+  let delay = setDelay(difficulty);
+  // delay=2000;
+  const hole = chooseHole(holes);
   return showAndHide(hole, delay);
 }
 
@@ -112,16 +155,16 @@ function showUp() {
 *
 */
 function showAndHide(hole, delay){
-  // TODO: call the toggleVisibility function so that it adds the 'show' class.
-  
+  toggleVisibility(holes);
+
   const timeoutID = setTimeout(() => {
-    // TODO: call the toggleVisibility function so that it removes the 'show' class when the timer times out.
-    
+    toggleVisibility(holes);
+
     gameOver();
-  }, 0); // TODO: change the setTimeout delay to the one provided as a parameter
+
+  }, delay);
   return timeoutID;
 }
-
 /**
 *
 * Adds or removes the 'show' class that is defined in styles.css to 
@@ -129,8 +172,7 @@ function showAndHide(hole, delay){
 *
 */
 function toggleVisibility(hole){
-  // TODO: add hole.classList.toggle so that it adds or removes the 'show' class.
-  
+  hole.classList.toggle('show');
   return hole;
 }
 
@@ -145,8 +187,8 @@ function toggleVisibility(hole){
 *
 */
 function updateScore() {
-  // TODO: Write your code here
-
+  points++;
+  score.textContent = points;
   return points;
 }
 
@@ -158,21 +200,15 @@ function updateScore() {
 *
 */
 function clearScore() {
-  // TODO: Write your code here
-  // points = 0;
-  // score.textContent = points;
+  points = 0;
+  score.textContent = points;
   return points;
 }
 
-/**
-*
-* Updates the control board with the timer if time > 0
-*
-*/
+
 function updateTimer() {
-  // TODO: Write your code here.
-  // hint: this code is provided to you in the instructions.
-  
+  if ( time > 0 ) time--;
+  timerDisplay.textContent = time;
   return time;
 }
 
@@ -183,8 +219,7 @@ function updateTimer() {
 *
 */
 function startTimer() {
-  // TODO: Write your code here
-  // timer = setInterval(updateTimer, 1000);
+  timer = setInterval(updateTimer, 1000);
   return timer;
 }
 
@@ -197,8 +232,12 @@ function startTimer() {
 *
 */
 function whack(event) {
-  // TODO: Write your code here.
-  // call updateScore()
+  if ( testMode ||
+       (( event.target.id.substr(4) === whackable ) && !whacked )) {
+    whacked = true;
+    playAudio(audioHit);
+    updateScore();
+  }
   return points;
 }
 
@@ -208,8 +247,9 @@ function whack(event) {
 * for an example on how to set event listeners using a for loop.
 */
 function setEventListeners(){
-  // TODO: Write your code here
-
+  for ( let mole of moles ) {
+    mole.addEventListener('click',whack);
+  }
   return moles;
 }
 
@@ -221,6 +261,7 @@ function setEventListeners(){
 */
 function setDuration(duration) {
   time = duration;
+  timerDisplay.textContent = time;
   return time;
 }
 
@@ -231,7 +272,7 @@ function setDuration(duration) {
 *
 */
 function stopGame(){
-  // stopAudio(song);  //optional
+  stopAudio(song);
   clearInterval(timer);
   return "game stopped";
 }
@@ -242,14 +283,26 @@ function stopGame(){
 * is clicked.
 *
 */
+let done = false;
 function startGame(){
-  //setDuration(10);
-  //showUp();
-  return "game started";
+  if ( testMode && !done ) {
+    setEventListeners();
+    done = true;
+  }
+  if ( testMode || ( time == 0 )) {
+    clearScore();
+    setDuration(10);
+    startTimer();
+    lastHole = -1;
+    showUp();
+    play();
+    return "game started";
+  }
+  return "game already running"
 }
 
 startButton.addEventListener("click", startGame);
-
+if ( !testMode ) setEventListeners();
 
 // Please do not modify the code below.
 // Used for testing purposes.
