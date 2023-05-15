@@ -1,6 +1,6 @@
 html {
- 
-  background: url('../assets/guac-a-mole.jpg') no-repeat center center fixed;
+  /*background: url('./assets/background.png') no-repeat center center fixed;*/
+  background: url('../assets/background.png') no-repeat center center fixed;
   box-sizing: content-box;
   -webkit-background-size: cover;
   -moz-background-size: cover;
@@ -71,12 +71,12 @@ h2 {
   top: 100%;
   width: 100%;
   height: 100%;
-  
+  /*transition: transform 0.5s;*/
   transition: all 1s;
   pointer-events:auto;
 }
 
 .hole.show .mole {
   top: 0;
-  
+  /*transform: scale(1.1);*/
 }
